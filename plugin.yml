@@ -1,0 +1,45 @@
+name: Esoteric-PvP
+author: ethaniccc
+description: A lightweight version of the Esoteric anti-cheat
+version: 1.0.0
+main: ethaniccc\Esoteric\Esoteric
+api: 4.0.0
+extensions:
+  Core: ">=8.0"
+permissions:
+  ac.alerts:
+    description: Get access to anti-cheat alerts
+    default: op
+  ac.bypass:
+    description: Bypass Esoteric punishments
+    default: op
+  ac.logs:
+    description: Get access to Esoteric logs
+    default: op
+  ac.banwave:
+    description: Execute Esoteric banwaves
+    default: op
+  ac.timings:
+    description: Execute Timings for Esoteric
+    default: op
+  ac.command.help:
+    description: Access to the anticheat's help command
+    default: op
+  ac.command.logs:
+    description: Access to get the anticheat logs of a player
+    default: op
+  ac.command.delay:
+    description: Access to change the alert delay
+    default: op
+  ac.command.banwave:
+    description: Handle Esoteric ban waves
+    default: op
+  ac.command.timings:
+    description: Enable timings for a certain period of time to see server performance with Esoteric
+    default: op
+  ac.command.exempt:
+    description: Get access to exempt sub commands in Esoteric
+    default: op
+  ac.command.debug:
+    description: Get access to debugging commands in Esoteric
+    default: op

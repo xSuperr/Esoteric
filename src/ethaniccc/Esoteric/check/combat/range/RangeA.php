@@ -18,56 +18,56 @@ use function round;
 
 class RangeA extends Check {
 
-	private bool $waiting = false;
-	private float $secondaryBuffer = 0;
+    private bool $waiting = false;
+    private float $secondaryBuffer = 0;
 
-	public function __construct() {
-		parent::__construct("Range", "A", "Checking if the player's attack range exceeds a certain limit", false);
-	}
+    public function __construct() {
+        parent::__construct("Range", "A", "Checking if the player's attack range exceeds a certain limit", false);
+    }
 
-	public function inbound(ServerboundPacket $packet, PlayerData $data): void {
-		if ($packet instanceof InventoryTransactionPacket && $packet->trData->getTypeId() === InventoryTransactionPacket::TYPE_USE_ITEM_ON_ENTITY && $packet->trData->getActionType() === UseItemOnEntityTransactionData::ACTION_ATTACK && ($data->gamemode->equals(GameMode::SURVIVAL()) || $data->gamemode->equals(GameMode::ADVENTURE()))) {
-			$this->waiting = true;
-		} elseif ($packet instanceof PlayerAuthInputPacket && $this->waiting) {
-			$locationData = $data->entityLocationMap->get($data->target);
-			if ($locationData !== null) {
-				if ($locationData->isSynced <= 30 || $data->ticksSinceTeleport <= 10) {
-					return;
-				}
-				$AABB = AABB::fromPosition($locationData->lastLocation, $locationData->hitboxWidth, $locationData->hitboxHeight);
-				$rawDistance = AABB::distanceFromVector($AABB, $data->player->getPosition()->add(0, $data->player->getEyeHeight(), 0));
-				if ($rawDistance > $this->option('max_raw', 3.05)) {
-					$flagged = true;
-					if (++$this->buffer >= 3) {
-						$this->flag($data, ['dist' => round($rawDistance, 3), 'type' => 'raw']);
-						$this->buffer = min($this->buffer, 4.5);
-					}
-				} else {
-					$this->buffer = max($this->buffer - 0.04, 0);
-				}
-				if ($packet->getInputMode() !== InputMode::TOUCHSCREEN && $locationData->isHuman && !$data->boundingBox->intersectsWith($AABB)) { // TODO: Solve SetActorMotion location interpolation stuff
-					$ray = new Ray($data->player->getPosition()->add(0, $data->player->getEyeHeight(), 0), $data->directionVector);
-					$intersection = $AABB->calculateIntercept($ray->origin, $ray->traverse(7));
-					$attackingAABB = AABB::fromPosition($data->player->getPosition()));
+    public function inbound(ServerboundPacket $packet, PlayerData $data): void {
+        if ($packet instanceof InventoryTransactionPacket && $packet->trData->getTypeId() === InventoryTransactionPacket::TYPE_USE_ITEM_ON_ENTITY && $packet->trData->getActionType() === UseItemOnEntityTransactionData::ACTION_ATTACK && ($data->gamemode->equals(GameMode::SURVIVAL()) || $data->gamemode->equals(GameMode::ADVENTURE()))) {
+            $this->waiting = true;
+        } elseif ($packet instanceof PlayerAuthInputPacket && $this->waiting) {
+            $locationData = $data->entityLocationMap->get($data->target);
+            if ($locationData !== null) {
+                if ($locationData->isSynced <= 30 || $data->ticksSinceTeleport <= 10) {
+                    return;
+                }
+                $AABB = AABB::fromPosition($locationData->lastLocation, $locationData->hitboxWidth, $locationData->hitboxHeight);
+                $rawDistance = AABB::distanceFromVector($AABB, $data->player->getPosition()->add(0, $data->player->getEyeHeight(), 0));
+                if ($rawDistance > $this->option('max_raw', 3.05)) {
+                    $flagged = true;
+                    if (++$this->buffer >= 3) {
+                        $this->flag($data, ['dist' => round($rawDistance, 3), 'type' => 'raw']);
+                        $this->buffer = min($this->buffer, 4.5);
+                    }
+                } else {
+                    $this->buffer = max($this->buffer - 0.04, 0);
+                }
+                if ($packet->getInputMode() !== InputMode::TOUCHSCREEN && $locationData->isHuman && !$data->boundingBox->intersectsWith($AABB)) { // TODO: Solve SetActorMotion location interpolation stuff
+                    $ray = new Ray($data->player->getPosition()->add(0, $data->player->getEyeHeight(), 0), $data->directionVector);
+                    $intersection = $AABB->calculateIntercept($ray->origin, $ray->traverse(7));
+                    $attackingAABB = AABB::fromPosition($data->player->getPosition());
 					if ($intersection !== null && !$AABB->intersectsWith($attackingAABB)) {
-						$raycastDist = $intersection->getHitVector()->distance($data->player->getPosition()->add(0, $data->player->getEyeHeight(), 0));
-						if ($raycastDist > $this->option('max_dist', 3.01) && $rawDistance >= 2.8) {
-							$flagged = true;
-							if (++$this->secondaryBuffer >= 1.5) {
-								$this->flag($data, ['dist' => round($raycastDist, 3), 'rd' => round($rawDistance, 3), 'type' => 'raycast']);
-								$this->secondaryBuffer = min($this->secondaryBuffer, 3);
-							}
-						} else {
-							$this->secondaryBuffer = max($this->secondaryBuffer - 0.01, 0);
-						}
-					}
+                        $raycastDist = $intersection->getHitVector()->distance($data->player->getPosition()->add(0, $data->player->getEyeHeight(), 0));
+                        if ($raycastDist > $this->option('max_dist', 3.01) && $rawDistance >= 2.8) {
+                            $flagged = true;
+                            if (++$this->secondaryBuffer >= 1.5) {
+                                $this->flag($data, ['dist' => round($raycastDist, 3), 'rd' => round($rawDistance, 3), 'type' => 'raycast']);
+                                $this->secondaryBuffer = min($this->secondaryBuffer, 3);
+                            }
+                        } else {
+                            $this->secondaryBuffer = max($this->secondaryBuffer - 0.01, 0);
+                        }
+                    }
 				}
-				if (!isset($flagged)) {
-					$this->reward(0.004);
-				}
-			}
-			$this->waiting = false;
-		}
-	}
+                if (!isset($flagged)) {
+                    $this->reward(0.004);
+                }
+            }
+            $this->waiting = false;
+        }
+    }
 
 }

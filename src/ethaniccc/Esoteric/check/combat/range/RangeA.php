@@ -34,8 +34,8 @@ class RangeA extends Check {
 				if ($locationData->isSynced <= 30 || $data->ticksSinceTeleport <= 10) {
 					return;
 				}
-				$AABB = AABB::fromPosition($locationData->lastLocation, $locationData->hitboxWidth + 0.1001, $locationData->hitboxHeight + 0.1001);
-				$rawDistance = AABB::distanceFromVector($AABB, $data->attackPos);
+				$AABB = AABB::fromPosition($locationData->lastLocation, $locationData->hitboxWidth, $locationData->hitboxHeight);
+				$rawDistance = AABB::distanceFromVector($AABB, $data->player->getPosition()->add(0, $data->player->getEyeHeight(), 0));
 				if ($rawDistance > $this->option('max_raw', 3.05)) {
 					$flagged = true;
 					if (++$this->buffer >= 3) {
@@ -46,11 +46,11 @@ class RangeA extends Check {
 					$this->buffer = max($this->buffer - 0.04, 0);
 				}
 				if ($packet->getInputMode() !== InputMode::TOUCHSCREEN && $locationData->isHuman && !$data->boundingBox->intersectsWith($AABB)) { // TODO: Solve SetActorMotion location interpolation stuff
-					$ray = new Ray($data->attackPos, $data->directionVector);
+					$ray = new Ray($data->player->getPosition()->add(0, $data->player->getEyeHeight(), 0), $data->directionVector);
 					$intersection = $AABB->calculateIntercept($ray->origin, $ray->traverse(7));
-					$attackingAABB = AABB::fromPosition($data->attackPos->subtract(0, 1.62, 0));
+					$attackingAABB = AABB::fromPosition($data->player->getPosition()));
 					if ($intersection !== null && !$AABB->intersectsWith($attackingAABB)) {
-						$raycastDist = $intersection->getHitVector()->distance($data->attackPos);
+						$raycastDist = $intersection->getHitVector()->distance($data->player->getPosition()->add(0, $data->player->getEyeHeight(), 0));
 						if ($raycastDist > $this->option('max_dist', 3.01) && $rawDistance >= 2.8) {
 							$flagged = true;
 							if (++$this->secondaryBuffer >= 1.5) {
